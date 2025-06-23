@@ -82,32 +82,31 @@ const check_param = (body, prop, conditions) => {
         conditions.push(`${prop} = '${body[prop]}'`)
 }
 
-const patch_issue = (project, res, body) => {
-    const conditions = [];
-    const id = body._id;
-    if (typeof id != "string") {
-        res.json({ error: 'missing _id' })
-        throw Error('missing_id');
-    }
-    if (typeof body.open == "boolean") {
-        conditions.push(`open = '${body.open}'`)
-    }
-    for (const prop of ['issue_title', 'issue_text', 'created_by', 'ssigned_to', 'status_text', 'open']) {
-        check_param(body, prop, conditions)
-    }
-    if (conditions.length === 0) {
-        res.json({ error: 'no update field(s) sent', _id: id })
-        throw Error('no update field(s) sent')
-    }
-    conditions.push(`updated_on = '${(new Date()).toISOString()}'`);
-    const sql = `UPDATE issues SET ${conditions.join(", ")} WHERE _id='${id}' AND project='${project}'`;
-    db.run(sql, {}, function (err, suc) {
-        //console.log({err, suc, th: this}); //res.json(err)
-        if (this.changes === 0 || err !== null) {
-            res.json({ error: 'could not update', _id: id })
-        } else {
-            res.json({ result: 'successfully updated', _id: id });
+const patch_issue = (project, body) => {
+    return new Promise((resolve, reject) => {
+        const conditions = [];
+        const id = body._id;
+        if (typeof id != "string") {
+            reject({ error: 'missing _id' })
         }
+        if (typeof body.open == "boolean") {
+            conditions.push(`open = '${body.open}'`)
+        }
+        for (const prop of ['issue_title', 'issue_text', 'created_by', 'ssigned_to', 'status_text', 'open']) {
+            check_param(body, prop, conditions)
+        }
+        if (conditions.length === 0) {
+            reject({ error: 'no update field(s) sent', _id: id })
+        }
+        conditions.push(`updated_on = '${(new Date()).toISOString()}'`);
+        const sql = `UPDATE issues SET ${conditions.join(", ")} WHERE _id='${id}' AND project='${project}'`;
+        db.run(sql, {}, function (err) {
+            if (this.changes === 0 || err !== null) {
+                reject({ error: 'could not update', _id: id })
+            } else {
+                resolve({ result: 'successfully updated', _id: id });
+            }
+        })
     })
 }
 
