@@ -11,13 +11,9 @@ module.exports = function (app) {
     })
 
     .post(function (req, res) {
-      let project = req.params.project;
-      try {
-        const issue = db.add_issue(project, req.body);
-        res.json(issue);
-      } catch (e) {
-        res.json({ error: e.message })
-      }
+      db.add_issue(req.params.project, req.body)
+        .then(issue => res.json(issue))
+        .catch(error => res.json({ error }))
     })
 
     .put(function (req, res) {

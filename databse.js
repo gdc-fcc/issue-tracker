@@ -10,43 +10,43 @@ const random_id = (length = 19) => {
     return result;
 }
 
-const required_string = str => {
+const required_string = (str, reject) => {
     if (typeof str !== "string" || str === "") {
-        throw Error('required field(s) missing');
+        reject('required field(s) missing');
     }
     return str;
 }
 
-const optional_string = str => {
+const optional_string = (str, reject) => {
     if (str === null || str === undefined) {
         return ""
     }
     if (typeof str !== "string") {
-        throw Error('bad optional fields');
+        reject('bad optional fields');
     }
     return str;
 }
 
 const add_issue = (project, body) => {
-    const now = (new Date()).toISOString();
-    const issue = {
-        _id: random_id(),
-        project: project,
-        issue_title: required_string(body.issue_title),
-        issue_text: required_string(body.issue_text),
-        created_on: now,
-        updated_on: now,
-        created_by: required_string(body.created_by),
-        assigned_to: optional_string(body.assigned_to),
-        open: true,
-        status_text: optional_string(body.status_text),
-    }
-    const keys = Object.keys(issue).join(", ");
-    const vals = Object.values(issue).map(x => `'${x}'`).join(", ");
-    const sql = `INSERT INTO issues(${keys}) VALUES (${vals})`
-    // async error handleing :(
-    db.run(sql, /*(res, err) => console.log({ res, err })*/);
-    return issue;
+    return new Promise((resolve, reject) => {
+        const now = (new Date()).toISOString();
+        const issue = {
+            _id: random_id(),
+            project: project,
+            issue_title: required_string(body.issue_title, reject),
+            issue_text: required_string(body.issue_text, reject),
+            created_on: now,
+            updated_on: now,
+            created_by: required_string(body.created_by, reject),
+            assigned_to: optional_string(body.assigned_to, reject),
+            open: true,
+            status_text: optional_string(body.status_text, reject),
+        }
+        const keys = Object.keys(issue).join(", ");
+        const vals = Object.values(issue).map(x => `'${x}'`).join(", ");
+        const sql = `INSERT INTO issues(${keys}) VALUES (${vals})`
+        db.run(sql, (_res, err) => err ? reject(err) :resolve(issue));
+    })
 }
 
 const get_issues = (project, res, req) => {
