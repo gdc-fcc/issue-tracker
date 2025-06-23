@@ -167,8 +167,43 @@ suite('Functional Tests', function () {
     })
   })
   suite('Delete', () => {
-    test('an issue: DELETE request to /api/issues/{project}')
-    test('an issue with an invalid _id: DELETE request to /api/issues/{project}')
-    test('an issue with missing _id: DELETE request to /api/issues/{project}')
+    test('an issue: DELETE request to /api/issues/{project}', done => {
+      chai
+        .request(server)
+        .keepOpen()
+        .delete('/api/issues/chai')
+        .send({ _id: generated_ids[0] })
+        .end((err, res) => {
+          assert.isNull(err);
+          assert.equal(res.status, 200);
+          const issue = JSON.parse(res.text);
+          assert.equal(issue.result, 'successfully deleted');
+          done()
+        })
+    })
+    test('an issue with an invalid _id: DELETE request to /api/issues/{project}', done => {
+      chai
+        .request(server)
+        .keepOpen()
+        .delete('/api/issues/chai')
+        .send({ _id: 'invalid' })
+        .end((err, res) => {
+          const issue = JSON.parse(res.text);
+          assert.equal(issue.error, 'could not delete');
+          done()
+        })
+    })
+    test('an issue with missing _id: DELETE request to /api/issues/{project}', done => {
+      chai
+        .request(server)
+        .keepOpen()
+        .delete('/api/issues/chai')
+        .send({ })
+        .end((err, res) => {
+          const issue = JSON.parse(res.text);
+          assert.equal(issue.error, 'missing _id');
+          done()
+        })
+    })
   })
 });
