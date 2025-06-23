@@ -51,7 +51,6 @@ const add_issue = (project, body) => {
 }
 
 const get_issues = (project, res, req) => {
-    console.log({ method: "GET", project })
     const conditions = [`project='${project}'`]
     for (const prop of ['_id', 'isse_title', 'issue_text', 'created_by', 'assigned_to', 'status_text', 'open']) {
         check_param(req.query, prop, conditions)
