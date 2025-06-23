@@ -42,20 +42,22 @@ const add_issue = (project, body) => {
             open: true,
             status_text: optional_string(body.status_text, reject),
         }
-        const keys = Object.keys(issue).join(", ");
-        const vals = Object.values(issue).map(x => `'${x}'`).join(", ");
-        const sql = `INSERT INTO issues(${keys}) VALUES (${vals})`
-        db.run(sql, (_res, err) => err ? reject(err) : resolve(issue));
+        const keys = Object.keys(issue).join(",");
+        const vals = Object.values(issue);
+        const sql = `INSERT INTO issues(${keys}) VALUES (${vals.map(x => "?").join(",")})`
+        db.run(sql, vals, (_res, err) => err ? reject(err) : resolve(issue));
     })
 }
 
 const get_issues = (project, query) => {
     return new Promise((resolve, _reject) => {
-        const conditions = [`project='${project}'`]
+        const conditions = [['project', project]]
         for (const prop of ['_id', 'isse_title', 'issue_text', 'created_by', 'assigned_to', 'status_text', 'open']) {
             check_param(query, prop, conditions)
         }
-        db.all(`SELECT * FROM issues WHERE ${conditions.join(" AND ")}`, (_error, rows) => {
+        const sql = `SELECT * FROM issues WHERE ${conditions.map(x => x[0] + "=?").join(" AND ")}`;
+        const params = [...conditions.map(x => x[1])];
+        db.all(sql, params, (_error, rows) => {
             rows.forEach(row => row.open = row.open === 'true')
             resolve(rows)
         })
@@ -79,7 +81,7 @@ const delete_issue = (project, _id) => {
 
 const check_param = (body, prop, conditions) => {
     if (typeof body[prop] === 'string')
-        conditions.push(`${prop} = '${body[prop]}'`)
+        conditions.push([prop, body[prop]])
 }
 
 const patch_issue = (project, body) => {
@@ -90,17 +92,18 @@ const patch_issue = (project, body) => {
             reject({ error: 'missing _id' })
         }
         if (typeof body.open == "boolean") {
-            conditions.push(`open = '${body.open}'`)
+            conditions.push(["open",  body.open])
         }
-        for (const prop of ['issue_title', 'issue_text', 'created_by', 'ssigned_to', 'status_text', 'open']) {
+        for (const prop of ['issue_title', 'issue_text', 'created_by', 'assigned_to', 'status_text', 'open']) {
             check_param(body, prop, conditions)
         }
         if (conditions.length === 0) {
             reject({ error: 'no update field(s) sent', _id: id })
         }
-        conditions.push(`updated_on = '${(new Date()).toISOString()}'`);
-        const sql = `UPDATE issues SET ${conditions.join(", ")} WHERE _id='${id}' AND project='${project}'`;
-        db.run(sql, {}, function (err) {
+        conditions.push(["updated_on", (new Date()).toISOString()]);
+        const sql = `UPDATE issues SET ${conditions.map(x => x[0] + "=?").join(",")} WHERE _id=? AND project=?`;
+        params = [...conditions.map(x => x[1]), id, project];
+        db.run(sql, params, function (err) {
             if (this.changes === 0 || err !== null) {
                 reject({ error: 'could not update', _id: id })
             } else {
