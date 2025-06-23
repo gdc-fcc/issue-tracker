@@ -16,8 +16,7 @@ module.exports = function (app) {
         const issue = db.add_issue(project, req.body);
         res.json(issue);
       } catch (e) {
-        console.log(e);
-        res.json({error: e.message})
+        res.json({ error: e.message })
       }
     })
 

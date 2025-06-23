@@ -7,9 +7,50 @@ chai.use(chaiHttp);
 
 suite('Functional Tests', function () {
   suite('Create an issue with...', function () {
-    test("every field: POST request to /api/issues/{project}")
-    test('only required fields: POST request to /api/issues/{project}')
-    test('missing required fields: POST request to /api/issues/{project}')
+    test("every field: POST request to /api/issues/{project}", done => {
+      chai
+        .request(server)
+        .keepOpen()
+        .post('/api/issues/chai')
+        .send({ issue_title: 'title', issue_text: 'text', created_by: 'chai',
+            assigned_to: 'dev', status_text: 'status'
+         })
+        .end((err, res) => {
+          assert.isNull(err);
+          assert.equal(res.status, 200);
+          const issue = JSON.parse(res.text);
+          assert.equal(issue.issue_title, 'title');
+          done()
+        })
+    })
+    test('only required fields: POST request to /api/issues/{project}', done => {
+      chai
+        .request(server)
+        .keepOpen()
+        .post('/api/issues/chai')
+        .send({ issue_title: 'title', issue_text: 'text', created_by: 'chai' })
+        .end((err, res) => {
+          assert.isNull(err);
+          assert.equal(res.status, 200);
+          const issue = JSON.parse(res.text);
+          assert.equal(issue.issue_title, 'title');
+          done()
+        })
+    })
+    test('missing required fields: POST request to /api/issues/{project}', done => {
+      chai
+        .request(server)
+        .keepOpen()
+        .post('/api/issues/chai')
+        .send({ issue_title: 'title', issue_text: 'text' })
+        .end((err, res) => {
+          assert.isNull(err);
+          assert.equal(res.status, 200);
+          const issue = JSON.parse(res.text);
+          assert.equal(issue.error, 'required field(s) missing');
+          done()
+        })
+    })
   })
   suite('View issues on a project', () => {
     test('GET request to /api/issues/{project}', done => {
