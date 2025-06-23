@@ -45,19 +45,20 @@ const add_issue = (project, body) => {
         const keys = Object.keys(issue).join(", ");
         const vals = Object.values(issue).map(x => `'${x}'`).join(", ");
         const sql = `INSERT INTO issues(${keys}) VALUES (${vals})`
-        db.run(sql, (_res, err) => err ? reject(err) :resolve(issue));
+        db.run(sql, (_res, err) => err ? reject(err) : resolve(issue));
     })
 }
 
-const get_issues = (project, res, req) => {
-    const conditions = [`project='${project}'`]
-    for (const prop of ['_id', 'isse_title', 'issue_text', 'created_by', 'assigned_to', 'status_text', 'open']) {
-        check_param(req.query, prop, conditions)
-    }
-    db.all(`SELECT * FROM issues WHERE ${conditions.join(" AND ")}`, (_error, rows) => {
-        //console.log({ error, rows });
-        rows.forEach(row => row.open = row.open === 'true')
-        res.json(rows)
+const get_issues = (project, query) => {
+    return new Promise((resolve, _reject) => {
+        const conditions = [`project='${project}'`]
+        for (const prop of ['_id', 'isse_title', 'issue_text', 'created_by', 'assigned_to', 'status_text', 'open']) {
+            check_param(query, prop, conditions)
+        }
+        db.all(`SELECT * FROM issues WHERE ${conditions.join(" AND ")}`, (_error, rows) => {
+            rows.forEach(row => row.open = row.open === 'true')
+            resolve(rows)
+        })
     })
 }
 

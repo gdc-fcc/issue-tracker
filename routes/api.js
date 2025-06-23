@@ -6,8 +6,8 @@ module.exports = function (app) {
   app.route('/api/issues/:project')
 
     .get(function (req, res) {
-      let project = req.params.project;
-      db.get_issues(project, res, req);
+      db.get_issues(req.params.project, req.query)
+        .then(issues => res.json(issues));
     })
 
     .post(function (req, res) {
