@@ -44,9 +44,8 @@ const add_issue = (project, body) => {
     const keys = Object.keys(issue).join(", ");
     const vals = Object.values(issue).map(x => `'${x}'`).join(", ");
     const sql = `INSERT INTO issues(${keys}) VALUES (${vals})`
-    console.log(sql)
     // async error handleing :(
-    db.run(sql, (res, err) => console.log({ res, err }));
+    db.run(sql, /*(res, err) => console.log({ res, err })*/);
     return issue;
 }
 
@@ -85,26 +84,23 @@ const check_param = (body, prop, conditions) => {
 
 const patch_issue = (project, res, body) => {
     const conditions = [];
-    console.log(body)
     const id = body._id;
     if (typeof id != "string") {
         res.json({ error: 'missing _id' })
         throw Error('missing_id');
     }
     if (typeof body.open == "boolean") {
-        conditions.push(`open = '${open}'`)
+        conditions.push(`open = '${body.open}'`)
     }
-    for (const prop of ['isse_title', 'issue_text', 'created_by', 'ssigned_to', 'status_text', 'open']) {
+    for (const prop of ['issue_title', 'issue_text', 'created_by', 'ssigned_to', 'status_text', 'open']) {
         check_param(body, prop, conditions)
     }
     if (conditions.length === 0) {
         res.json({ error: 'no update field(s) sent', _id: id })
         throw Error('no update field(s) sent')
     }
-    console.log({ body, conditions });
     conditions.push(`updated_on = '${(new Date()).toISOString()}'`);
     const sql = `UPDATE issues SET ${conditions.join(", ")} WHERE _id='${id}' AND project='${project}'`;
-    console.log(sql);
     db.run(sql, {}, function (err, suc) {
         //console.log({err, suc, th: this}); //res.json(err)
         if (this.changes === 0 || err !== null) {

@@ -5,6 +5,8 @@ const server = require('../server');
 
 chai.use(chaiHttp);
 
+const generated_ids = [];
+
 suite('Functional Tests', function () {
   suite('Create an issue with...', function () {
     test("every field: POST request to /api/issues/{project}", done => {
@@ -12,14 +14,16 @@ suite('Functional Tests', function () {
         .request(server)
         .keepOpen()
         .post('/api/issues/chai')
-        .send({ issue_title: 'title', issue_text: 'text', created_by: 'chai',
-            assigned_to: 'dev', status_text: 'status'
-         })
+        .send({
+          issue_title: 'title', issue_text: 'text', created_by: 'chai',
+          assigned_to: 'dev', status_text: 'status'
+        })
         .end((err, res) => {
           assert.isNull(err);
           assert.equal(res.status, 200);
           const issue = JSON.parse(res.text);
           assert.equal(issue.issue_title, 'title');
+          generated_ids.push(issue._id);
           done()
         })
     })
@@ -34,6 +38,7 @@ suite('Functional Tests', function () {
           assert.equal(res.status, 200);
           const issue = JSON.parse(res.text);
           assert.equal(issue.issue_title, 'title');
+          generated_ids.push(issue._id);
           done()
         })
     })
@@ -94,11 +99,72 @@ suite('Functional Tests', function () {
     })
   })
   suite('Update', () => {
-    test('one field on an issue: PUT request to /api/issues/{project}')
-    test('multiple fields on an issue: PUT request to /api/issues/{project}')
-    test('an issue with missing _id: PUT request to /api/issues/{project}')
-    test('an issue with no fields to update: PUT request to /api/issues/{project}')
-    test('with an invalid _id: PUT request to /api/issues/{project}')
+    test('one field on an issue: PUT request to /api/issues/{project}', done => {
+      chai
+        .request(server)
+        .keepOpen()
+        .put('/api/issues/chai')
+        .send({ _id: generated_ids[0], issue_title: 'new title' })
+        .end((err, res) => {
+          assert.isNull(err);
+          assert.equal(res.status, 200);
+          const issue = JSON.parse(res.text);
+          assert.equal(issue.result, 'successfully updated');
+          assert.equal(issue._id, generated_ids[0]);
+          done()
+        })
+    })
+    test('multiple fields on an issue: PUT request to /api/issues/{project}', done => {
+      chai
+        .request(server)
+        .keepOpen()
+        .put('/api/issues/chai')
+        .send({ _id: generated_ids[0], issue_title: 'new title', open: false })
+        .end((err, res) => {
+          assert.isNull(err);
+          assert.equal(res.status, 200);
+          const issue = JSON.parse(res.text);
+          assert.equal(issue.result, 'successfully updated');
+          assert.equal(issue._id, generated_ids[0]);
+          done()
+        })
+    })
+    test('an issue with missing _id: PUT request to /api/issues/{project}', done => {
+      chai
+        .request(server)
+        .keepOpen()
+        .put('/api/issues/chai')
+        .send({ issue_title: 'new title', open: false })
+        .end((err, res) => {
+          const issue = JSON.parse(res.text);
+          assert.equal(issue.error, 'missing _id');
+          done()
+        })
+    })
+    test('an issue with no fields to update: PUT request to /api/issues/{project}', done => {
+      chai
+        .request(server)
+        .keepOpen()
+        .put('/api/issues/chai')
+        .send({ _id: generated_ids[0] })
+        .end((err, res) => {
+          const issue = JSON.parse(res.text);
+          assert.equal(issue.error, 'no update field(s) sent');
+          done()
+        })
+    })
+    test('with an invalid _id: PUT request to /api/issues/{project}', done => {
+      chai
+        .request(server)
+        .keepOpen()
+        .put('/api/issues/chai')
+        .send({ _id: 'invalid', issue_title: 'new title' })
+        .end((err, res) => {
+          const issue = JSON.parse(res.text);
+          assert.equal(issue.error, 'could not update');
+          done()
+        })
+    })
   })
   suite('Delete', () => {
     test('an issue: DELETE request to /api/issues/{project}')

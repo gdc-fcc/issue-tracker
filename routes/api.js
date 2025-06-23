@@ -24,9 +24,7 @@ module.exports = function (app) {
       let project = req.params.project;
       try {
         db.patch_issue(project, res, req.body)
-      } catch (e) {
-        console.log(e)
-      }
+      } catch (e) {}
     })
 
     .delete(function (req, res) {
