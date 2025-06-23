@@ -61,17 +61,18 @@ const get_issues = (project, res, req) => {
     })
 }
 
-const delete_issue = (project, res, _id) => {
-    if (typeof _id !== "string") {
-        res.json({ error: 'missing _id' })
-        return;
-    }
-    db.run("DELETE FROM issues WHERE _id=$_id AND project=$project", { $_id: _id, $project: project }, function (err, _) {
-        if (this.changes === 0 || err) {
-            res.json({ error: 'could not delete', _id })
-        } else {
-            res.json({ result: 'successfully deleted', _id })
+const delete_issue = (project, _id) => {
+    return new Promise((resolve, reject) => {
+        if (typeof _id !== "string") {
+            reject('missing _id')
         }
+        db.run("DELETE FROM issues WHERE _id=$_id AND project=$project", { $_id: _id, $project: project }, function (err, _) {
+            if (this.changes === 0 || err) {
+                reject('could not delete')
+            } else {
+                resolve('successfully deleted')
+            }
+        })
     })
 }
 

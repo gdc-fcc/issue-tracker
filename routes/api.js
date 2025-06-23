@@ -20,12 +20,13 @@ module.exports = function (app) {
       let project = req.params.project;
       try {
         db.patch_issue(project, res, req.body)
-      } catch (e) {}
+      } catch (e) { }
     })
 
     .delete(function (req, res) {
-      let project = req.params.project;
-      db.delete_issue(project, res, req.body._id);
+      const _id = req.body._id;
+      db.delete_issue(req.params.project, _id)
+        .then(result => res.json({result, _id}))
+        .catch(error => res.json({error, _id}))
     });
-
 };
